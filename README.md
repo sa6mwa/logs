@@ -10,3 +10,9 @@ Most files are [ADIF logs](http://www.adif.org) unless a contest/activity
 requires a different logging format. I have chosen to separate the logs in
 different files per activity or session. For the ADIF logs you can run
 adifaggregator.py to generate a complete list of my QSOs in a single ADIF.
+
+## Logging software
+
+I primarily use [termlog](https://github.com/tzneal/ham-go) which is a terminal
+logger written in Golang. It supports rig control through hamlib and
+experimental support for logging from wsjtx and fldigi/fllog.

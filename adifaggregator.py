@@ -20,7 +20,7 @@ def save(fn, data):
     for qso in data:
         for key in sorted(qso):
             value = qso[key]
-            fh.write('<%s:%i>%s  ' % (key.upper(), len(value), value))
+            fh.write('<%s:%i>%s ' % (key.upper(), len(value), value))
         fh.write('<EOR>\n')
     fh.close()
 #def conv_datetime(adi_date, adi_time):
