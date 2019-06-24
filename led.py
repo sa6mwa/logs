@@ -2,7 +2,7 @@
 # lid.py - List & EDit QSOs in ADIF file(s)
 # DE SA6MWA https://github.com/sa6mwa/sa6mwa-logs
 # partly based on ADIF.PY by OK4BX http://web.bxhome.org
-import sys, getopt, os
+import sys, errno, getopt, os
 import re
 import datetime
 import time
@@ -179,22 +179,27 @@ def main():
             qso[field] = value
             modified_logbook = True
       if printqso:
-        print fieldtemplate.format( c,
-                                    qso["qso_date"] if "qso_date" in qso else na,
-                                    qso["time_on"] if "time_on" in qso else na,
-                                    qso["call"] if "call" in qso else na,
-                                    qso["mode"] if "mode" in qso else na,
-                                    qso["band"] if "band" in qso else na,
-                                    qso["freq"] if "freq" in qso else na,
-                                    qso["tx_pwr"] if "tx_pwr" in qso else na,
-                                    qso["qsl_rcvd"] if "qsl_rcvd" in qso else "",
-                                    qso["qsl_sent"] if "qsl_sent" in qso else "",
-                                    qso["email"] if "email" in qso else na,
-                                  )
+        try:
+          print fieldtemplate.format( c,
+                                      qso["qso_date"] if "qso_date" in qso else na,
+                                      qso["time_on"] if "time_on" in qso else na,
+                                      qso["call"] if "call" in qso else na,
+                                      qso["mode"] if "mode" in qso else na,
+                                      qso["band"] if "band" in qso else na,
+                                      qso["freq"] if "freq" in qso else na,
+                                      qso["tx_pwr"] if "tx_pwr" in qso else na,
+                                      qso["qsl_rcvd"] if "qsl_rcvd" in qso else "",
+                                      qso["qsl_sent"] if "qsl_sent" in qso else "",
+                                      qso["email"] if "email" in qso else na,
+                                    )
+        except IOError as e:
+          if e.errno == errno.EPIPE:
+            if modified_logbook and not dryrun:
+              save(fn, logbook)
+            sys.exit(0)
       c += 1
-    if modified_logbook:
-      if not dryrun:
-        save(fn, logbook)
+    if modified_logbook and not dryrun:
+      save(fn, logbook)
 
 if __name__ == '__main__':
   main()
