@@ -1,12 +1,12 @@
 #!/usr/bin/env python
-# List QSOs in ADIF file(s)
+# lid.py - List & EDit QSOs in ADIF file(s)
 # DE SA6MWA https://github.com/sa6mwa/sa6mwa-logs
-# based on ADIF.PY by OK4BX http://web.bxhome.org
+# partly based on ADIF.PY by OK4BX http://web.bxhome.org
 import sys, getopt, os
 import re
 import datetime
 import time
-import glob
+
 ADIF_REC_RE = re.compile(r'<(.*?):(\d+).*?>([^<\t\f\v]+)')
 
 def parse(fn):
@@ -100,6 +100,11 @@ def usage():
                       field x of QSO with index specified with -i
   -v, --value y       For use with -i, set the value of field specified with
                       -f above to y of QSO with index given with -i
+EXAMPLES
+  # Set TX_PWR field to 10 for QSOs number 34 and 35
+  $ {prog} -i 34,35 -f tx_pwr -v 10 mylog1.adif mylog2.adif
+  # Set QSL_RCVD to Y and QSL_SENT to Q for QSO number 2
+  $ {prog} -i 2 -q rq mylog1.adif mylog2.adif
 """.format(prog=sys.argv[0])
 
 def main():
@@ -111,7 +116,7 @@ def main():
     sys.exit(2)
   dryrun = False
   sort = True
-  index = None
+  indices = None
   qsl_rcvd = None
   qsl_sent = None
   field = None
@@ -125,8 +130,10 @@ def main():
     elif o in ("-u", "--unsorted"):
       sort = False
     elif o in ("-i", "--index"):
-      assert a.isdigit(), "-i value must be a digit"
-      index = int(a)
+      indices = a.split(',')
+      for i, index in enumerate(indices):
+        assert index.isdigit(), "-i must be one or more digits separated by comma (,)"
+        indices[i] = int(index)
     elif o in ("-q", "--qsl"):
       if "r" in a.lower():
         qsl_rcvd = "Y"
@@ -158,9 +165,9 @@ def main():
       logbook = sortlogbook(logbook)
     for qso in logbook:
       printqso = True
-      if index:
+      if indices:
         printqso = False
-        if c == index:
+        if c in indices:
           printqso = True
           if qsl_rcvd:
             qso["qsl_rcvd"] = qsl_rcvd
