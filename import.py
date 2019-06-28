@@ -46,13 +46,20 @@ def conv_datetime(adi_date, adi_time):
   return datetime.datetime.strptime(adi_date+adi_time.ljust(6,"0"), "%Y%m%d%H%M%S")
 
 def compareQSO(qso1, qso2):
-  match_keys = [ "call", "qso_date", "time_on", "mode", "band" ]
+  match_keys = [ "call", "mode", "band" ]
   qso1 = { k.lower(): v for k, v in qso1.items() }
   qso2 = { k.lower(): v for k, v in qso2.items() }
   match = True
+  for qso in [ qso1, qso2 ]:
+    assert "qso_date" in qso, "qso_date not in qso: {}".format(qso)
+    assert "time_on" in qso, "time_on not in qso: {}".format(qso)
   for k in match_keys:
     for qso in [ qso1, qso2 ]:
       assert k in qso, "required key {} is not in qso: {}".format(k, qso)
+    qso1time = conv_datetime(qso1["qso_date"], qso1["time_on"])
+    qso2time = conv_datetime(qso2["qso_date"], qso2["time_on"])
+    if qso1time != qso2time:
+      match = False
     if qso1[k] != qso2[k]:
       match = False
   return match
