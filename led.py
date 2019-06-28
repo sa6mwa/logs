@@ -116,7 +116,7 @@ def main():
     sys.exit(2)
   dryrun = False
   sort = True
-  indices = None
+  indices = list()
   qsl_rcvd = None
   qsl_sent = None
   field = None
@@ -130,10 +130,20 @@ def main():
     elif o in ("-u", "--unsorted"):
       sort = False
     elif o in ("-i", "--index"):
-      indices = a.split(',')
-      for i, index in enumerate(indices):
-        assert index.isdigit(), "-i must be one or more digits separated by comma (,)"
-        indices[i] = int(index)
+      for x in a.split(','):
+        index = x.split('-')
+        for val in index:
+          assert val.isdigit(), "-i must be one or more numbers or range separated by comma (,)"
+        if len(index) == 1:
+          indices.append(int(index[0]))
+        elif len(index) == 2:
+          start = int(index[0])
+          finish = int(index[1]) + 1
+          for x in range(start, finish):
+            indices.append(int(x))
+        else:
+          usage()
+          assert False, "wrong format of option -i"
     elif o in ("-q", "--qsl"):
       if "r" in a.lower():
         qsl_rcvd = "Y"
