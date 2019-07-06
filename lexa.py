@@ -116,6 +116,7 @@ def usage():
   -v, --value y       For use with -i, set the value of field specified with
                       -f above to y of QSO with index given with -i
   -e, --export o.adif Export complete output to adif file o.adif
+  -m, --per-minute    Calculate average QSOs per minute (and per hour)
 EXAMPLES
   # Set TX_PWR field to 10 for QSOs number 34 and 35
   $ {prog} -i 34,35 -f tx_pwr -v 10 mylog1.adif mylog2.adif
@@ -128,7 +129,7 @@ EXAMPLES
 
 def main():
   try:
-    opts, adifs = getopt.getopt(sys.argv[1:], "hnt:ui:Rq:f:v:e:", ["help","dry-run","template=","unsorted","index=","reverse","qsl=","field=","value=","export="])
+    opts, adifs = getopt.getopt(sys.argv[1:], "hnt:ui:Rq:f:v:e:m", ["help","dry-run","template=","unsorted","index=","reverse","qsl=","field=","value=","export=","per-minutes"])
   except getopt.GetoptError as err:
     print str(err)
     usage()
@@ -143,6 +144,7 @@ def main():
   field = None
   value = None
   export = None
+  perminute = False
   for o, a in opts:
     if o in ("-h", "--help"):
       usage()
@@ -186,6 +188,8 @@ def main():
       value = a
     elif o in ("-e", "--export"):
       export = a
+    elif o in ("-m", "--per-minutes"):
+      perminute = True
     else:
       assert False, "unhandled option"
   if len(adifs) < 1:
@@ -201,6 +205,9 @@ def main():
   na = "N/A"
   c = 1
   exportlogbook = list()
+  start_time = None
+  end_time = None
+  qsos_printed = 0
 
   for fn in adifs:
     logbook = parse(fn)
@@ -230,12 +237,25 @@ def main():
           for f in fieldtemplates[fieldtemplate]["fields"]:
             fields.append(qso[f] if f in qso else na)
           print tmpl.format(*fields)
+          qsos_printed += 1
+          if perminute and "qso_date" in qso and "time_on" in qso:
+            end_time = conv_datetime(qso["qso_date"], qso["time_on"])
+            if not start_time:
+              start_time = end_time
         except IOError as e:
           if e.errno == errno.EPIPE:
             if modified_logbook and not dryrun:
               save(fn, logbook)
             sys.exit(0)
       c += 1
+
+    if perminute:
+      ts = time.mktime(start_time.timetuple())
+      te = time.mktime(end_time.timetuple())
+      per_minute = qsos_printed / (float(te-ts) / 60.0)
+      per_hour = qsos_printed / (float(te-ts) / 60.0 / 60.0)
+      print "# QSOs per minute = {:0.2f}, QSOs per hour = {:0.2f}".format(per_minute, per_hour)
+
     if modified_logbook and not dryrun:
       save(fn, logbook)
     if export:
